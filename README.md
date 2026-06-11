@@ -135,4 +135,4 @@ At 100MHz with 5% activity: **~100ns per inference** on 10,000-bit hypervectors.
 
 ## License
 
-Confidential — Enotrium
+Apache License 2.0 — see [LICENSE](LICENSE). Copyright 2026 Enotrium.
