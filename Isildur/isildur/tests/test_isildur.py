@@ -20,7 +20,7 @@ from isildur.core import (
     corrupt_hv, Hypervector,
 )
 from isildur.nn_to_hdc import (
-    model_to_hv, LayerBinarizer, HVComposer,
+    model_to_hv, model_to_hv_v2, LayerBinarizer, HVComposer,
     hv_similarity, hv_hamming,
     save_hv, load_hv, hv_to_packed_bytes, packed_bytes_to_hv,
 )
@@ -34,6 +34,10 @@ from isildur.fpga_backend import (
     FPGABackend, FPGAConfig, FPGAReport,
     export_fpga_hls, export_verilog, estimate_fpga_resources,
     HVOpCore, CIMHammingCore, SysBundCore,
+)
+from isildur.serva import (
+    ServaEncoder, ServaFile, ServaHDCBridge, SVLibrary,
+    SERVA_DEFAULT_DIM, get_hdc_bibliography, cite,
 )
 
 
@@ -890,23 +894,31 @@ def test_end_to_end_model_fusion():
     print("✓ test_end_to_end_model_fusion passed")
 
 
-def test_multi_input_consistency():
-    """Test that different inputs produce different HVs for same model."""
+def test_multi_model_discriminability():
+    """V2 encoder: different models must produce different HVs."""
     model = SimpleCNN()
+    model2 = nn.Sequential(
+        nn.Conv2d(3, 64, 3),
+        nn.ReLU(),
+        nn.AdaptiveAvgPool2d((1, 1)),
+        nn.Flatten(),
+        nn.Linear(64, 10),
+    )
     dim = 256
 
-    input1 = torch.randn(1, 3, 224, 224)
-    input2 = torch.randn(1, 3, 224, 224)
+    hv1 = model_to_hv_v2(model, hv_dim=dim)
+    hv2 = model_to_hv_v2(model2, hv_dim=dim)
 
-    hv1 = model_to_hv(model, hv_dim=dim, input_sample=input1)
-    hv2 = model_to_hv(model, hv_dim=dim, input_sample=input2)
+    # Same model twice = identical
+    hv1b = model_to_hv_v2(model, hv_dim=dim)
+    assert hv_similarity(hv1, hv1b) == 1.0
 
-    # Same model, different inputs → different but similar HVs
+    # Different models = different HVs
     d = hv_hamming(hv1, hv2)
-    assert 0.0 < d < 1.0, f"Different inputs should give different HVs, got Hamming={d:.4f}"
+    assert 0.4 < d < 0.6, f"Different models should have Hamming ~0.5 (random-like), got {d:.4f}"
 
-    print(f"  Cross-input Hamming distance: {d:.4f}")
-    print("✓ test_multi_input_consistency passed")
+    print(f"  Different-model Hamming distance: {d:.4f} (random pair ~0.5)")
+    print("✓ test_multi_model_discriminability passed")
 
 
 # ══════════════════════════════════════════════════════════════════════

@@ -51,6 +51,18 @@ from isildur.fpga_backend import (
     SysBundCore,
 )
 
+from isildur.serva import (
+    ServaEncoder,
+    ServaFile,
+    ServaHDCBridge,
+    SVLibrary,
+    init_sv_library,
+    get_hdc_bibliography,
+    cite,
+    HDC_BIBLIOGRAPHY,
+    SERVA_DEFAULT_DIM,
+)
+
 __version__ = "1.0.0"
 __all__ = [
     "Hypervector",
@@ -80,4 +92,13 @@ __all__ = [
     "HVOpCore",
     "CIMHammingCore",
     "SysBundCore",
+    "ServaEncoder",
+    "ServaFile",
+    "ServaHDCBridge",
+    "SVLibrary",
+    "init_sv_library",
+    "get_hdc_bibliography",
+    "cite",
+    "HDC_BIBLIOGRAPHY",
+    "SERVA_DEFAULT_DIM",
 ]
