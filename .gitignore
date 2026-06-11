@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+.venv/
+venv/
+
+# C build artifacts
+*.o
+*.a
+c/test_isildur
+c/demo_isildur
+
+# Benchmark data
+benchmarks/data/
+
+# Saved hypervectors
+*.hv
