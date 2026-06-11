@@ -1,5 +1,7 @@
 # Isildur
 
+![CI](https://github.com/Enotrium/Isildur/actions/workflows/ci.yml/badge.svg)
+
 **Turn Any Neural Network into a Vector Symbolic Architecture (VSA/HDC) — Run AI Inference in Seconds Without Backpropagation**
 
 Isildur is the bridge between neural networks and Hyperdimensional Computing. It converts any trained neural network into balanced binary hypervectors (~10,000-bit), enables ultra-low-power inference via in-memory Hamming distance computation on neuromorphic FPGAs, and fuses multiple models via HDC consensus — all without retraining or backpropagation.

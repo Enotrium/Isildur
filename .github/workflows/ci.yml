@@ -23,19 +23,16 @@ jobs:
 
     - name: Install dependencies
       run: |
-        cd Isildur
         pip install --upgrade pip
         pip install -e ".[dev]"
         pip install torchvision
 
     - name: Run tests
       run: |
-        cd Isildur
         python -m pytest isildur/tests/test_isildur.py -v --tb=short
 
     - name: Quick encoder validation
       run: |
-        cd Isildur
         python -c "
         import torch
         from isildur.nn_to_hdc import model_to_hv_v2, hv_similarity
@@ -59,7 +56,6 @@ jobs:
     - name: Lint with ruff
       run: |
         pip install ruff
-        cd Isildur
         ruff check isildur/ --ignore=E501,E402,F401 || true
 
   benchmark:
@@ -72,7 +68,6 @@ jobs:
         python-version: '3.11'
     - name: Install dependencies
       run: |
-        cd Isildur
         pip install -e .
         pip install torchvision
     - name: Quick benchmark (MNIST subset)
