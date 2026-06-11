@@ -309,6 +309,10 @@ def test_assoc_memory():
 
 def test_spike_hdc():
     """Test SpikeHDC encoding."""
+    # Seeded: with unseeded 10-dim random inputs, the two spike vectors
+    # occasionally correlate by chance and their HVs exceed the 0.5
+    # similarity bound (flaked on CI 2026-06-11).
+    torch.manual_seed(42)
     input_size = 10
     dim = 500
     encoder = SpikeHDC(input_size, dim)
