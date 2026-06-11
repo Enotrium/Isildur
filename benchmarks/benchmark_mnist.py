@@ -22,7 +22,7 @@ import time
 import sys
 import os
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "Isildur"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from isildur.core import gen_hvs, bundle, thresh, ensure_balance, batch_sim
 from isildur.cim import CIMAssociativeMemory
