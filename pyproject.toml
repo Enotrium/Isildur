@@ -7,7 +7,7 @@ name = "isildur"
 version = "1.0.0"
 description = "Turn Any Neural Network into VSA/HDC — Ultra-Low-Power Inference on Neuromorphic FPGAs Without Backpropagation"
 readme = "README.md"
-license = {text = "MIT"}
+license = {text = "Apache-2.0"}
 authors = [
     {name = "Enotrium", email = "dev@enotrium.ai"},
 ]
