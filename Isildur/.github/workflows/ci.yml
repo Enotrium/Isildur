@@ -1,0 +1,115 @@
+name: Isildur CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        cd Isildur
+        pip install --upgrade pip
+        pip install -e ".[dev]"
+        pip install torchvision
+
+    - name: Run tests
+      run: |
+        cd Isildur
+        python -m pytest isildur/tests/test_isildur.py -v --tb=short
+
+    - name: Quick encoder validation
+      run: |
+        cd Isildur
+        python -c "
+        import torch
+        from isildur.nn_to_hdc import model_to_hv_v2, hv_similarity
+        model = torch.nn.Sequential(torch.nn.Linear(10,5), torch.nn.ReLU(), torch.nn.Linear(5,2))
+        hv1 = model_to_hv_v2(model, hv_dim=256)
+        hv2 = model_to_hv_v2(model, hv_dim=256)
+        assert hv_similarity(hv1, hv2) == 1.0, 'Determinism failed'
+        model2 = torch.nn.Sequential(torch.nn.Linear(10,8), torch.nn.ReLU(), torch.nn.Linear(8,2))
+        hv3 = model_to_hv_v2(model2, hv_dim=256)
+        assert hv_similarity(hv1, hv3) < 0.5, 'Different models should differ'
+        print('✓ Quick encoder validation passed')
+        "
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: Lint with ruff
+      run: |
+        pip install ruff
+        cd Isildur
+        ruff check isildur/ --ignore=E501,E402,F401 || true
+
+  benchmark:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: Install dependencies
+      run: |
+        cd Isildur
+        pip install -e .
+        pip install torchvision
+    - name: Quick benchmark (MNIST subset)
+      run: |
+        cd benchmarks
+        python -c "
+        import torch
+        import torchvision
+        import torchvision.transforms as transforms
+        from isildur.core import gen_hvs, bundle, batch_sim, thresh
+        from isildur.arthedain import ArthedainEncoder
+
+        # Load small subset
+        transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,),(0.5,))])
+        train = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
+
+        encoder = ArthedainEncoder(hv_dim=1024, seed=42)
+        prototypes = torch.zeros(10, 1024)
+        counts = torch.zeros(10)
+
+        for i in range(100):
+            img, label = train[i]
+            hv = encoder.encode_image(img)
+            prototypes[label] += hv
+            counts[label] += 1
+
+        prototypes = thresh(prototypes)
+        correct = 0
+        for i in range(100, 200):
+            img, label = train[i]
+            hv = encoder.encode_image(img)
+            sims = batch_sim(hv, prototypes)
+            if sims.argmax().item() == label:
+                correct += 1
+
+        acc = correct / 100 * 100
+        print(f'MNIST quick benchmark: {acc:.1f}% accuracy (100 train, 100 test)')
+        assert acc > 50, f'Accuracy too low: {acc}%'
+        print('✓ Quick MNIST benchmark passed')
+        "

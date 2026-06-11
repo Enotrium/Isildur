@@ -35,9 +35,9 @@ from isildur.fpga_backend import (
     export_fpga_hls, export_verilog, estimate_fpga_resources,
     HVOpCore, CIMHammingCore, SysBundCore,
 )
-from isildur.serva import (
-    ServaEncoder, ServaFile, ServaHDCBridge, SVLibrary,
-    SERVA_DEFAULT_DIM, get_hdc_bibliography, cite,
+from isildur.arthedain import (
+    ArthedainEncoder, ArthedainFile, ArthedainBridge, SVLibrary,
+    ARTHEDAIN_DEFAULT_DIM, get_hdc_bibliography, cite,
 )
 
 

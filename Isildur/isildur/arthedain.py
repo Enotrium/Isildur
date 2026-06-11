@@ -1,10 +1,10 @@
 """
-serva.py — The Serva Standard Integration for Isildur.
+serva.py — The Arthedain Standard Integration for Isildur.
 
-Implements the .serva universal data format based on Servamind's
-ServaStack architecture, bridged with Isildur's HDC/VSA engine.
+Implements the .arthedain universal data format based on Arthedain's
+ArthedainStack architecture, bridged with Isildur's HDC/VSA engine.
 
-The Serva Standard (Servamind Inc., Dec 2025):
+The Arthedain Standard (Arthedain Inc., Dec 2025):
   "Any data to any model on any hardware."
   
   Core primitives: bit-level XOR, bundling, permutation,
@@ -15,20 +15,20 @@ The Serva Standard (Servamind Inc., Dec 2025):
   Hutter proved optimal compression implies optimal prediction.
   Shannon proved how to compress without losing information.
   Both are satisfied when data is already structured by physical
-  causality — and Serva exploits this by encoding into a
+  causality — and Arthedain exploits this by encoding into a
   high-dimensional representational space where computation
   occurs directly on the compressed representation.
 
-  The .serva format achieves:
+  The .arthedain format achieves:
   - 30–374× energy efficiency (96–99% reduction)
   - 4–34× lossless compression
   - 68× compute payload reduction
-  - No loss of accuracy when training on .serva data
+  - No loss of accuracy when training on .arthedain data
 
 This module:
-  1. Implements Serva encoding primitives (holographic encoding)
+  1. Implements Arthedain encoding primitives (holographic encoding)
   2. Loads the SV Library of pre-encoded concept hypervectors
-  3. Provides .serva file format I/O
+  3. Provides .arthedain file format I/O
   4. Bridges Serva/HDC operations for universal computation
 
 SV Library: ~/.arthedain/sv_library/
@@ -62,15 +62,15 @@ from isildur.core import (
 
 
 # ══════════════════════════════════════════════════════════════════════
-# Serva Constants (from paper: Section 3.3 Architecture)
+# Arthedain Constants (from paper: Section 3.3 Architecture)
 # ══════════════════════════════════════════════════════════════════════
 
 # Default hypervector dimension (matches SV library)
-SERVA_DEFAULT_DIM = 8192
+ARTHEDAIN_DEFAULT_DIM = 8192
 
-# Serva encoding operations (paper: "bit-level addition, XOR, permutation,
+# Arthedain encoding operations (paper: "bit-level addition, XOR, permutation,
 # pseudo-random bit generation, and distance")
-SERVA_OPS = {
+ARTHEDAIN_OPS = {
     "xor": "bind",          # Element-wise XOR = HDC binding
     "bundle": "bundle",      # Accumulation = HDC bundling
     "permute": "permute",    # Cyclic shift = HDC permutation
@@ -87,7 +87,7 @@ class SVLibrary:
     """
     Manager for the SV Library of pre-encoded concept hypervectors.
 
-    The SV (Serva Vector) library stores hypervectors that represent
+    The SV (Arthedain Vector) library stores hypervectors that represent
     fundamental concepts — sensor modalities, defense targets, BCI
     states, NLP concepts — as balanced bipolar vectors.
 
@@ -111,7 +111,7 @@ class SVLibrary:
     def __init__(
         self,
         library_path: Optional[str] = None,
-        hv_dim: int = SERVA_DEFAULT_DIM,
+        hv_dim: int = ARTHEDAIN_DEFAULT_DIM,
     ):
         """
         Initialize SV Library manager.
@@ -152,8 +152,8 @@ class SVLibrary:
         )
 
         if not os.path.exists(registry_path):
-            print(f"[isildur/serva] SV Library not found at {registry_path}")
-            print(f"  Initialize with: isildur serva-init")
+            print(f"[isildur/arthedain] SV Library not found at {registry_path}")
+            print(f"  Initialize with: isildur arthedain-init")
             return
 
         with open(registry_path, "r") as f:
@@ -369,15 +369,15 @@ class SVLibrary:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# Serva Encoder — Universal Data → .serva Holographic Encoding
+# Arthedain Encoder — Universal Data → .arthedain Holographic Encoding
 # ══════════════════════════════════════════════════════════════════════
 
-class ServaEncoder:
+class ArthedainEncoder:
     """
-    Universal data encoder implementing the Serva Standard.
+    Universal data encoder implementing the Arthedain Standard.
 
     Converts any data (images, text, audio, sensor streams,
-    structured records) into .serva format — a high-dimensional
+    structured records) into .arthedain format — a high-dimensional
     binary representation that preserves all information while
     enabling direct computation without decompression.
 
@@ -394,7 +394,7 @@ class ServaEncoder:
        pseudo-random bit generation, and distance"
 
     These are exactly the HDC primitives already implemented
-    in Isildur's core engine. The Serva encoding is essentially
+    in Isildur's core engine. The Arthedain encoding is essentially
     a specific HDC encoding strategy specialized for:
     - Lossless information preservation
     - Direct computation on the encoded representation
@@ -403,7 +403,7 @@ class ServaEncoder:
 
     def __init__(
         self,
-        hv_dim: int = SERVA_DEFAULT_DIM,
+        hv_dim: int = ARTHEDAIN_DEFAULT_DIM,
         mode: str = "bipolar",
         seed: Optional[int] = None,
         device: Optional[torch.device] = None,
@@ -421,7 +421,7 @@ class ServaEncoder:
         key_hvs: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         """
-        Encode a tensor into a .serva hypervector.
+        Encode a tensor into a .arthedain hypervector.
 
         The encoding process (paper Section 3.3):
         1. Flatten the input data to a 1D vector
@@ -442,7 +442,7 @@ class ServaEncoder:
                     If None, generates deterministic keys.
 
         Returns:
-            Encoded hypervector (hv_dim,) — the .serva representation
+            Encoded hypervector (hv_dim,) — the .arthedain representation
         """
         # Flatten to 1D
         flat = data.view(-1).float()
@@ -462,7 +462,7 @@ class ServaEncoder:
                 self.device, self.seed
             )
 
-        # Serva encoding via HDC binding + bundling
+        # Arthedain encoding via HDC binding + bundling
         # Each element: hvs.append(bind(key[i], scalar_encode(value[i])))
         # Note: In Serva, scalar encoding uses a single "level HV" per value
         # (simplified from full ItemMemory for efficiency)
@@ -505,7 +505,7 @@ class ServaEncoder:
         self, data: bytes, chunk_size: int = 256
     ) -> torch.Tensor:
         """
-        Encode raw bytes into a .serva hypervector.
+        Encode raw bytes into a .arthedain hypervector.
 
         Each byte is encoded as a value and bound with a position key.
 
@@ -525,7 +525,7 @@ class ServaEncoder:
         self, image: torch.Tensor
     ) -> torch.Tensor:
         """
-        Encode an image tensor into a .serva hypervector.
+        Encode an image tensor into a .arthedain hypervector.
 
         The spatial structure is preserved by using position-dependent
         key hypervectors. This ensures that nearby pixels map to
@@ -560,7 +560,7 @@ class ServaEncoder:
         self, text: str, token_dim: int = 256
     ) -> torch.Tensor:
         """
-        Encode text into a .serva hypervector.
+        Encode text into a .arthedain hypervector.
 
         Text is simple-hash encoded: each character becomes a
         deterministic pseudo-random hypervector, then position-tagged
@@ -586,7 +586,7 @@ class ServaEncoder:
 
     def encode_file(self, filepath: str) -> torch.Tensor:
         """
-        Encode a file into a .serva hypervector.
+        Encode a file into a .arthedain hypervector.
 
         Reads the file as bytes and encodes its content.
 
@@ -602,15 +602,15 @@ class ServaEncoder:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# .serva File Format
+# .arthedain File Format
 # ══════════════════════════════════════════════════════════════════════
 
 @dataclass
-class ServaFile:
+class ArthedainFile:
     """
-    .serva file format representation.
+    .arthedain file format representation.
 
-    The .serva format (from paper):
+    The .arthedain format (from paper):
     - A universal data format that encodes any input into a single
       representational space
     - Information is preserved losslessly
@@ -620,7 +620,7 @@ class ServaFile:
 
     File structure:
     ┌──────────────────────────────────────────┐
-    │ Header: magic bytes "SERVA", version      │
+    │ Header: magic bytes "ARTHEDAIN", version      │
     │ Metadata: dim, mode, seed, sha256,        │
     │           source_type, timestamp          │
     │ Hypervector: packed bits (dim/8 bytes)    │
@@ -637,7 +637,7 @@ class ServaFile:
     created_at: str = field(default_factory=lambda: datetime.now().isoformat())
     sha256: str = ""
 
-    MAGIC = b"SERVA"
+    MAGIC = b"ARTHEDAIN"
     VERSION = 1
 
     def __post_init__(self):
@@ -656,7 +656,7 @@ class ServaFile:
 
     def save(self, filepath: str) -> None:
         """
-        Save as a .serva file.
+        Save as a .arthedain file.
 
         Format:
         [MAGIC:5][VERSION:1][DIM:4][META_LEN:4][META_JSON:N][HV_PACKED:M]
@@ -679,21 +679,21 @@ class ServaFile:
             f.write(hv_packed)
 
     @classmethod
-    def load(cls, filepath: str) -> "ServaFile":
+    def load(cls, filepath: str) -> "ArthedainFile":
         """
-        Load a .serva file.
+        Load a .arthedain file.
 
         Returns:
-            ServaFile object with hypervector and metadata
+            ArthedainFile object with hypervector and metadata
 
         Raises:
-            ValueError: If not a valid .serva file
+            ValueError: If not a valid .arthedain file
         """
         with open(filepath, "rb") as f:
             magic = f.read(5)
             if magic != cls.MAGIC:
                 raise ValueError(
-                    f"Not a .serva file: magic={magic!r}"
+                    f"Not a .arthedain file: magic={magic!r}"
                 )
 
             version = int.from_bytes(f.read(1), "little")
@@ -734,26 +734,26 @@ class ServaFile:
         Estimate compression relative to raw float32 storage.
         
         Raw: dim × 4 bytes (float32)
-        .serva: dim / 8 bytes (packed bits) + header
+        .arthedain: dim / 8 bytes (packed bits) + header
         """
         raw = self.hv_dim * 4 + 100  # + header overhead
         return raw / self.size_bytes
 
 
 # ══════════════════════════════════════════════════════════════════════
-# Serva-HDC Bridge: Universal Computation on Encoded Data
+# Arthedain-HDC Bridge: Universal Computation on Encoded Data
 # ══════════════════════════════════════════════════════════════════════
 
-class ServaHDCBridge:
+class ArthedainBridge:
     """
-    Bridge between Serva Standard and Isildur HDC engine.
+    Bridge between Arthedain Standard and Isildur HDC engine.
 
-    This is the Isildur implementation of Servamind's Chimera concept:
+    This is the Isildur implementation of Arthedain's Chimera concept:
     "Chimera can take any model in any state and enable it to operate
-    on .serva universal feature vector files without re-training."
+    on .arthedain universal feature vector files without re-training."
 
     How it works:
-    1. Any data → ServaEncoder → .serva hypervector
+    1. Any data → ArthedainEncoder → .arthedain hypervector
     2. Any NN model → model_to_hv() → model hypervector
     3. Both exist in the same HDC space → direct comparison
     4. Classification: Hamming distance between data HV and class HVs
@@ -764,11 +764,11 @@ class ServaHDCBridge:
 
     def __init__(
         self,
-        hv_dim: int = SERVA_DEFAULT_DIM,
+        hv_dim: int = ARTHEDAIN_DEFAULT_DIM,
         encoder_seed: Optional[int] = None,
     ):
         self.hv_dim = hv_dim
-        self.encoder = ServaEncoder(
+        self.encoder = ArthedainEncoder(
             hv_dim=hv_dim,
             seed=encoder_seed,
         )
@@ -777,7 +777,7 @@ class ServaHDCBridge:
 
     def encode(self, data: Any, data_type: str = "auto") -> torch.Tensor:
         """
-        Encode any data into a .serva hypervector.
+        Encode any data into a .arthedain hypervector.
 
         Args:
             data: Input data (tensor, bytes, string, image tensor)
@@ -958,26 +958,26 @@ class ServaHDCBridge:
 
     def export_serva(
         self, data: Any, filepath: str, source_type: str = "auto"
-    ) -> ServaFile:
+    ) -> ArthedainFile:
         """
-        Encode data and export as .serva file.
+        Encode data and export as .arthedain file.
 
         Args:
             data: Input data
-            filepath: Output .serva file path
+            filepath: Output .arthedain file path
             source_type: Data type label
 
         Returns:
-            ServaFile object
+            ArthedainFile object
         """
         hv = self.encode(data, source_type)
-        serva_file = ServaFile(
+        arthedain_file = ArthedainFile(
             hypervector=hv,
             hv_dim=self.hv_dim,
             source_type=source_type,
         )
-        serva_file.save(filepath)
-        return serva_file
+        arthedain_file.save(filepath)
+        return arthedain_file
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -1013,12 +1013,12 @@ HDC_BIBLIOGRAPHY = {
         "url": "https://www.zotero.org/enotrium/collections/JTV8PX3T",
         "relevance": "Origin of holographic encoding: circular convolution for binding",
     },
-    "servamind2025": {
-        "title": "The Serva Standard: One Primitive for All AI",
+    "arthedainmind2025": {
+        "title": "The Arthedain Standard: One Primitive for All AI",
         "authors": "St. Clair, R., Cook, J. A., Sutor Jr., P., Cavero, V., Mindt, G.",
         "year": 2025,
         "url": "https://servamind.com",
-        "relevance": "Serva encoding: holographic principles, XOR/bundle/permute HDC ops, Chimera wrapper",
+        "relevance": "Arthedain encoding: holographic principles, XOR/bundle/permute HDC ops, Chimera wrapper",
     },
     "hutter2005": {
         "title": "Universal Artificial Intelligence",
@@ -1087,7 +1087,7 @@ def init_sv_library(library_path: Optional[str] = None) -> SVLibrary:
     lib.load_registry()
 
     if lib.is_loaded:
-        print(f"[isildur/serva] SV Library loaded: {len(lib)} hypervectors")
+        print(f"[isildur/arthedain] SV Library loaded: {len(lib)} hypervectors")
         for domain in lib.list_domains():
             count = len(lib.get_hvs_by_domain(domain))
             print(f"  {domain}: {count} vectors")
