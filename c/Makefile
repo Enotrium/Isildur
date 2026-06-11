@@ -13,7 +13,13 @@ test: test_isildur.o libisildur.a
 	$(CC) $(CFLAGS) -o test_isildur test_isildur.o libisildur.a $(LDFLAGS)
 	./test_isildur
 
-clean:
-	rm -f *.o *.a test_isildur
+demo: demo_isildur.o libisildur.a
+	$(CC) $(CFLAGS) -o demo_isildur demo_isildur.o libisildur.a $(LDFLAGS)
+	./demo_isildur
 
-.PHONY: test clean
+demo_isildur.o: demo_isildur.c isildur.h
+
+clean:
+	rm -f *.o *.a test_isildur demo_isildur
+
+.PHONY: test demo clean
