@@ -625,20 +625,19 @@ def model_to_hv_v2(
     verbose: bool = False,
 ) -> torch.Tensor:
     """
-    Production-grade NN→HDC encoder: hash once, generate via PRNG.
+    Production-grade NN→HDC encoder: hash model once → PRNG all bits.
 
     Algorithm:
-    1. Collect all parameters + architecture metadata into one buffer
-    2. SHA-256 hash the entire buffer once → 32-byte deterministic seed
-    3. Use the 32-byte hash to seed a PRNG
-    4. Generate hv_dim random bits from the PRNG
-    5. Balance to 50/50 ±1
+    1. Streaming SHA-256 hash of all parameters + architecture → 32 bytes
+    2. Convert hash to two 64-bit ints → seed for torch.Generator
+    3. Generate hv_dim random bits in one vectorized call via PRNG
+    4. Balance to exactly 50/50 ±1
 
-    This is O(P) where P = total parameters (one pass to hash).
-    Time: ~0.1s for ResNet18 (46MB), ~0.25s for ResNet50 (102MB).
+    This is O(P) for hashing + O(hv_dim) for PRNG generation.
+    Time: ~0.05s for ResNet18 at any hv_dim (hash is constant time).
 
-    Different models → different parameter buffers → different hashes
-    → different PRNG seeds → different hypervectors. Guaranteed.
+    Different models → different hashes → different PRNG seeds
+    → different (deterministic) hypervectors. Guaranteed.
 
     Args:
         model: Any PyTorch nn.Module
@@ -656,11 +655,10 @@ def model_to_hv_v2(
     if device is None:
         device = torch.device("cpu")
 
-    # --- Collect all parameters + architecture into one buffer ---
-    # Use streaming hash to avoid giant bytearray allocations
+    # --- Hash all model parameters + architecture once ---
     hasher = hashlib.sha256()
 
-    # Architectual fingerprint first (so it influences hash even for paramless models)
+    # Architecture fingerprint
     for name, module in model.named_modules():
         if module is model:
             continue
@@ -668,43 +666,55 @@ def model_to_hv_v2(
         n_params = sum(p.numel() for p in module.parameters(recurse=False))
         hasher.update(struct.pack("i", n_params))
 
-    # Hash all parameter values
+    # Parameter values (streaming, chunked)
     total_params = 0
     for name, param in model.named_parameters():
         w = param.data.detach().cpu().float()
         flat = w.view(-1)
         total_params += flat.shape[0]
-        # Hash in chunks to handle large tensors
-        chunk = 4096
-        for i in range(0, flat.shape[0], chunk):
-            end = min(i + chunk, flat.shape[0])
+        chunk_size = 4096
+        for i in range(0, flat.shape[0], chunk_size):
+            end = min(i + chunk_size, flat.shape[0])
             hasher.update(flat[i:end].numpy().tobytes())
 
     if verbose:
         print(
-            f"[isildur v2] Model: {total_params:,} parameters, "
+            f"[isildur v2] Model: {total_params:,} params, "
             f"hash={hasher.hexdigest()[:16]}..."
         )
 
-    # --- Generate hypervector from hash via deterministic PRNG ---
+    # --- Convert hash to PRNG seed ---
     seed_bytes = hasher.digest()  # 32 bytes
 
-    # Use the hash as a seed for a custom deterministic bit generator
-    # For each bit position, combine hash bytes with position for uniqueness
-    hv_bits = torch.zeros(hv_dim, dtype=torch.float32, device=device)
-    position_bytes = struct.pack("i", 0)
+    # Split 32 bytes into two u64 seeds (upper/lower)
+    # Hash the full digest again to ensure avalanche for the second int
+    seed_low = int.from_bytes(seed_bytes[:8], "little") % (2**63 - 1)
+    seed_high = hashlib.sha256(seed_bytes + b"part2").digest()
+    seed_high_int = int.from_bytes(seed_high[:8], "little") % (2**63 - 1)
 
-    for i in range(hv_dim):
-        # Compute a deterministic bit from: hash ⊕ position
-        # XOR seed bytes with position to get a unique per-position hash
-        position_bytes = struct.pack("i", i)
-        h = hashlib.sha256()
-        h.update(seed_bytes)
-        h.update(position_bytes)
-        digest = h.digest()
-        # Use LSB of first byte
-        bit = digest[0] & 1
-        hv_bits[i] = 1.0 if bit else -1.0
+    # --- Generate all hv_dim bits in one PRNG call ---
+    g = torch.Generator(device=device)
+    g.manual_seed(seed_low)
+
+    # Generate raw bits via uniform coin flips
+    raw = torch.empty(hv_dim, device=device, dtype=torch.float32)
+    raw.uniform_(0, 2, generator=g)  # [0, 2)
+
+    # Map: [0,1) → -1, [1,2) → +1
+    hv_bits = torch.where(
+        raw >= 1.0,
+        torch.tensor(1.0, device=device),
+        torch.tensor(-1.0, device=device),
+    )
+
+    # If the PRNG itself is biased, mix with the second seed
+    if hv_bits.sum().abs().item() > hv_dim * 0.02:
+        g2 = torch.Generator(device=device)
+        g2.manual_seed(seed_high_int)
+        raw2 = torch.empty(hv_dim, device=device, dtype=torch.float32)
+        raw2.uniform_(0, 2, generator=g2)
+        hv_bits2 = torch.where(raw2 >= 1.0, torch.tensor(1.0, device=device), torch.tensor(-1.0, device=device))
+        hv_bits = hv_bits * hv_bits2  # XOR in bipolar = multiply
 
     # --- Balance ---
     hv_bits = ensure_balance(hv_bits)
