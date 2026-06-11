@@ -130,14 +130,7 @@ Isildur provides complete tooling from research to tapeout:
 
 At 100MHz with 5% activity: **~100ns per inference** on 10,000-bit hypervectors.
 
-## Citation
-
-Built upon:
-- Amrouch et al., "Brain-Inspired Hyperdimensional Computing for Ultra-Efficient Edge AI", 2022
-- Yuan et al., "VecKM: A Linear Time and Space Local Point Cloud Geometry Encoder", ICML 2024
-- Enotrium HyperVectorML: Model→HV Converter
-- Enotrium FPGA Event-Based Encode: Neuromorphic FPGA Pipeline
 
 ## License
 
-MIT — Enotrium
+Confidential — Enotrium
