@@ -14,39 +14,39 @@ Without this in-memory Hamming distance, HDC's proven advantages in efficiency, 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                           ISILDUR PIPELINE                               │
-│                                                                          │
-│  Any Trained NN ──────► HDC Converter ──────► Binary HV (~10k bits)      │
-│  (ResNet, ViT,        (LayerBinarizer +    (Balanced ±1 bipolar)         │
-│   GPT, CNN, MLP)       HVComposer)                                       │
-│       │                     │                     │                       │
-│       │              ┌──────┴──────┐       ┌──────┴──────────────┐       │
-│       │              │  Binarize   │       │  HDC Operations       │       │
-│       │              │  activations│       │  • XOR (Binding)     │       │
-│       │              │  + weights  │       │  • Bundling          │       │
-│       │              └─────────────┘       │  • Permutation       │       │
-│       │                                    │  • Similarity        │       │
-│       │                                    └──────┬───────────────┘       │
-│       │                                           │                       │
-│       │                    ┌──────────────────────┘                       │
-│       │                    ▼                                               │
-│       │           ┌───────────────────┐                                   │
-│       │           │  CIM Associative   │  ← Computing-in-Memory            │
-│       │           │  Memory (TCAM)     │     Hamming distance              │
-│       │           │  ~0.5pJ per search │     on neuromorphic FPGA          │
-│       │           └────────┬──────────┘                                   │
-│       │                    │                                               │
-│       │                    ▼                                               │
-│       │           ┌───────────────────┐                                   │
-│       │           │  HDC Consensus     │  ← Model Fusion via               │
-│       │           │  (HD-Glue)         │     Hyperdimensional Binding      │
-│       │           └────────┬──────────┘                                   │
-│       │                    │                                               │
-│       │                    ▼                                               │
-│       │            ╔═══════════════════╗                                  │
-│       │            ║  FPGA / ASIC      ║  ← Neuromorphic Inference         │
-│       │            ║  XCZU9EG / TSMC   ║     100MHz, ~15mW, ~100ns/tick   │
-│       │            ╚═══════════════════╝                                  │
+│                           ISILDUR PIPELINE                              │
+│                                                                         │
+│  Any Trained NN ──────► HDC Converter ──────► Binary HV (~10k bits)     │
+│  (ResNet, ViT,        (LayerBinarizer +    (Balanced ±1 bipolar)        │
+│   GPT, CNN, MLP)       HVComposer)                                      │
+│       │                     │                     │                     │
+│       │              ┌──────┴──────┐       ┌──────┴──────────────┐      │
+│       │              │  Binarize   │       │  HDC Operations     │      │
+│       │              │  activations│       │  • XOR (Binding)    │      │
+│       │              │  + weights  │       │  • Bundling         │      │
+│       │              └─────────────┘       │  • Permutation      │      │
+│       │                                    │  • Similarity       │      │
+│       │                                    └──────┬──────────────┘      │
+│       │                                           │                     │
+│       │                    ┌──────────────────────┘                     │
+│       │                    ▼                                            │
+│       │           ┌───────────────────┐                                 │
+│       │           │  CIM Associative   │  ← Computing-in-Memory         │
+│       │           │  Memory (TCAM)     │     Hamming distance           │
+│       │           │  ~0.5pJ per search │     on neuromorphic FPGA       │
+│       │           └────────┬──────────┘                                 │
+│       │                    │                                            │
+│       │                    ▼                                            │
+│       │           ┌───────────────────┐                                 │
+│       │           │  HDC Consensus     │  ← Model Fusion via            │
+│       │           │  (HD-Glue)         │   Hyperdimensional Binding     │
+│       │           └────────┬──────────┘                                 │
+│       │                    │                                            │
+│       │                    ▼                                            │
+│       │            ╔═══════════════════╗                                │
+│       │            ║  FPGA / ASIC      ║  ← Neuromorphic Inference      │
+│       │            ║  XCZU9EG / TSMC   ║     100MHz, ~15mW, ~100ns/tick │
+│       │            ╚═══════════════════╝                                │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
